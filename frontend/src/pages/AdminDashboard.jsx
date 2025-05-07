@@ -19,10 +19,6 @@ import AdminManagement from '../components/AdminManagement'
 import EventManagement from '../components/EventManagement'
 import DashboardOverview from "../components/DashboardOverview";
 
-
-const token = localStorage.getItem("adminToken");
-
-
 // Add Global Styles for font import
 const GlobalFontStyles = () => (
   <GlobalStyles
@@ -185,12 +181,13 @@ const demoTheme = createTheme({
 });
 
 const makeAuthorizedRequest = async (url, options = {}) => {
-  if (!token) {
+  const currentToken = localStorage.getItem("adminToken"); // Read token here
+  if (!currentToken) {
     throw new Error("No authentication token found");
   }
 
   const headers = {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${currentToken}`, // Use currentToken
     "Content-Type": "application/json",
     ...options.headers,
   };
@@ -227,7 +224,8 @@ const CustomLogo = () => (
 );
 
 function DemoPageContent({ pathname }) {
-  console.log("Token after login:", token);
+  const currentToken = localStorage.getItem("adminToken"); // Read token here for logging
+  console.log("Token in dashboard:", currentToken); // Log the current token
   return (
     <Box
       sx={{

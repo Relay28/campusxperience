@@ -4,7 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.io.Decoders;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.wachichaw.backend.entity.UserEntity;
@@ -14,11 +16,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.Key;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtUtil {
-    private Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Generates a secure key
-    private long expirationTime = 1000 * 60 * 60; // 1 hour
+
+    @Value("${jwt.secret}")
+    private String secretString;
+
+    @Value("${jwt.expiration}")
+    private long expirationTime;
+
+    private Key secretKey;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(this.secretString);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     // Generate token for UserEntity without role attribute
     public String generateToken(UserEntity user) {
@@ -33,7 +48,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", admin.getEmail());
         claims.put("username", admin.getName());
-        claims.put("role", admin.getRole()); // Specify admin role
+        claims.put("role", admin.getRole());
         return createToken(claims, String.valueOf(admin.getadminId()));
     }
 
@@ -54,12 +69,15 @@ public class JwtUtil {
     public String extractUsername(String token) {
         return (String) extractAllClaims(token).get("username");
     }
+
     public String extractProfpic(String token) {
         return (String) extractAllClaims(token).get("prof_pic");
     }
+
     public String extractEmail(String token) {
         return (String) extractAllClaims(token).get("email");
     }
+
     public String extractRole(String token) {
         return (String) extractAllClaims(token).get("role");
     }

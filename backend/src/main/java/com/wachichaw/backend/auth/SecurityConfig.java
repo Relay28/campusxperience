@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.http.HttpMethod; // Import HttpMethod
 
 import java.util.List;
 
@@ -31,12 +32,21 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless APIs
                 .authorizeHttpRequests(authorize -> authorize
+                        // Public endpoints
+                        .requestMatchers("/user/login", "/user/save", "/admin/login", "/user/check-email", "/verify").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/user/update").permitAll() // Review if this should require authentication
+                        .requestMatchers("/uploads/**", "/profile_pictures/**").permitAll()
 
-                        .requestMatchers("/user/login","/user/save", "admin/login", "/user/update","/user/check-email","/verify").permitAll() // Allow login without authentication
-                        .requestMatchers("/uploads/**","/profile_pictures/**").permitAll() 
+                        // Admin endpoints - Require ROLE_ADMIN
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Manage admins
+                        .requestMatchers("/event/**").hasRole("ADMIN") // Manage events
+                        .requestMatchers("/ticket/**").hasRole("ADMIN") // Manage tickets
+                        .requestMatchers(HttpMethod.GET, "/user/getAll").hasRole("ADMIN") // Get all users
+                        .requestMatchers(HttpMethod.DELETE, "/user/delete/**").hasRole("ADMIN") // Delete users
 
-
-                        .anyRequest().authenticated()) // Other requests need authentication
+                        // Fallback: Deny any other request by default if not matched above
+                        .anyRequest().authenticated() // Other requests need authentication
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Stateless session management
 
         // Add the JWT filter before the UsernamePasswordAuthenticationFilter
